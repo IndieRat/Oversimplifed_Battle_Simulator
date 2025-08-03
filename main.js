@@ -529,6 +529,9 @@ class Commander extends Unit {
                         ally.applySpeedBuff(50);
                         this.unitsBuffed.push(ally);
                     
+                    } else if (!ally.isBuffed) {
+                        ally.applyDamageBuff(25);
+                        ally.applySpeedBuff(50);
                     }
                     inRange.push(ally);
                 }
