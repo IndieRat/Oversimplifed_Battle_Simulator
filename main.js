@@ -239,7 +239,7 @@ class Unit {
         this.range = 25; // default range for the unit
         this.radius = 10 
 
-        this.behavior = behavior;
+        this.behavior = behavior || "";
         currentUnits.push(this); // Add the new unit to the current units array
     }
 
@@ -449,7 +449,7 @@ class Unit {
         let alliesInRange = []
         let allies = []
         for (let otherUnit of currentUnits) {
-            if (otherUnit == this || otherUnit.isDead || otherUnit.team != this.team) {
+            if (otherUnit == this || otherUnit.behavior == "" || otherUnit.isDead || otherUnit.team != this.team) {
                 continue;
             }
 
@@ -553,7 +553,7 @@ class Commander extends Unit {
                 let largestDistance = Infinity;
                 let nearestAlly = {};
                 for (let otherUnit of currentUnits) {
-                    if (otherUnit == this || otherUnit.isDead || otherUnit.team !== this.team) {
+                    if (otherUnit == this ||  otherUnit.isDead || otherUnit.behavior == "" || otherUnit.team !== this.team) {
                         continue;
                     }
 
