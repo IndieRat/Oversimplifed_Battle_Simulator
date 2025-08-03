@@ -130,7 +130,7 @@ const unitType = document.getElementById('unitType');
 const fixedRows = 15; // number of rows in the grid
 const fixedCols = 10; // number of columns in the grid
 
-let unlockedUnits = ['Soldier', 'Archer', 'Commander']; // list of unlocked units
+let unlockedUnits = ['Infantry', 'Archer', 'Commander', 'HeavyInfantry']; // list of unlocked units
 let occupiedCells = []; // array to keep track of occupied cells in the grid
 let projectiles = [];
 
@@ -141,7 +141,7 @@ const teamColors = {
 };
 
 const unitColors = {
-    Soldier: 'lightblue',
+    Infantry: 'lightblue',
     Archer: 'lightgreen',
     Commander: 'lightcoral',
 }
@@ -233,6 +233,7 @@ class Unit {
         
         this.attackCooldown = 0.5; // cooldown for the unit's attack
         this.currentAttackCooldown = 0.5; // cooldown for the unit's attack
+        this.damageReduction = 0;
 
         this.originalSpeed = 1;
         this.speed = this.originalSpeed; // default speed for the unit
@@ -397,7 +398,8 @@ class Unit {
     }
 
     takeDamage(amount) {
-        this.health -= amount; // Reduce health by the damage amount
+        let newAmount = amount * ((this.damageReduction/100) || 1)
+        this.health -= newAmount; // Reduce health by the damage amount
         if (this.health <= 0) {
             console.log(`${this.type} has died`)
             this.isDead = true; // Mark the unit as dead if health is 0 or less
@@ -486,10 +488,10 @@ class Unit {
     
 }
 
-class Soldier extends Unit {
+class Infantry extends Unit {
     constructor(team, x, y) {
         super(team, x, y, "melee");
-        this.type = 'Soldier';
+        this.type = 'Infantry';
     }
 }
 
@@ -497,7 +499,7 @@ class Archer extends Unit {
     constructor(team, x, y) {
         super(team, x, y, "ranged");
         this.type = 'Archer'
-        this.range *= 3
+        this.range *= 5
         this.health = 80
     }
 }
@@ -608,6 +610,16 @@ class Commander extends Unit {
     
 }
 
+class HeavyInfantry extends Unit {
+    constructor(team, x, y) {
+        super(team, x, y, "melee")
+        this.type = "HeavyInfantry"
+        this.health = 120
+        this.damageReduction = 15
+        this.speed = 0.85
+    }
+}
+
 let currentUnits = []; // array to store current units on the battlefield
 
 
@@ -692,13 +704,13 @@ function updateGame() {
     }
 }
 
-let gameUpdateLoop = setInterval(updateGame, 60 / gameSpeed)
+let gameUpdateLoop = setInterval(updateGame, 100 / gameSpeed)
 speedInput.addEventListener('input', function() {
     gameSpeed = Number(speedInput.value) || 1;
     speedText.textContent = `Speed: ${gameSpeed}`;
 
     clearInterval(gameUpdateLoop)
-    gameUpdateLoop = setInterval(updateGame, 60 / gameSpeed)
+    gameUpdateLoop = setInterval(updateGame, 100 / gameSpeed)
 });
 
 
@@ -760,14 +772,17 @@ canvas.addEventListener('mousedown', function(event) {
                     if (currentUnitType && unlockedUnits.includes(currentUnitType)) {
                         let unit = undefined;
                         switch (currentUnitType) {
-                            case 'Soldier':
-                                unit = new Soldier(boundaryTeam, unitX, unitY);
+                            case 'Infantry':
+                                unit = new Infantry(boundaryTeam, unitX, unitY);
                                 break;
                             case 'Archer':
                                 unit = new Archer(boundaryTeam, unitX, unitY);
                                 break;
                             case 'Commander':
-                                unit = new Commander(boundaryTeam, unitX, unitY)
+                                unit = new Commander(boundaryTeam, unitX, unitY);
+                                break;
+                            case 'HeavyInfantry':
+                                unit = new HeavyInfantry(boundaryTeam, unitX, unitY);
                                 break;
                             default:
                                 unit = new Unit(boundaryTeam, unitX, unitY, "melee");
@@ -811,7 +826,7 @@ canvas.addEventListener('mousedown', function(event) {
 // gets if we are hovering over a unit
 
 let unitDescriptions = {
-    Soldier: "The general combat unit, well rounded, built for melee",
+    Infantry: "The general combat unit, well rounded, built for melee",
     Archer: "Weaker yet fires a projectile at whoever is in its range and is the closest",
     Commander: "The general buffers, gives all nearby units a attack and speed buff"
 
