@@ -524,7 +524,7 @@ class Commander extends Unit {
             let allies = info["allies"]
             if (allies.length > 0) {
                 for (let ally of allies) {
-                    if (!this.unitsBuffed.includes(ally) && !ally.isBuffed) {
+                    if (!this.unitsBuffed.includes(ally)) {
                         ally.applyDamageBuff(25);
                         ally.applySpeedBuff(50);
                         this.unitsBuffed.push(ally);
