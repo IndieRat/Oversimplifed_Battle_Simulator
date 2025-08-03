@@ -267,7 +267,7 @@ class AOEProjectile extends Projectile {
 }
 
 class Unit {
-    constructor(team, x, y, behavior) {
+    constructor(team, x, y, behavior, projectileType) {
         this.team = team; // team the unit belongs to
         this.x = x;
         this.y = y;
@@ -291,7 +291,7 @@ class Unit {
 
         this.behavior = behavior || "";
 
-        this.projectileType = "";
+        this.projectileType = projectileType || "";
         currentUnits.push(this); // Add the new unit to the current units array
     }
 
@@ -554,11 +554,10 @@ class Infantry extends Unit {
 
 class Archer extends Unit {
     constructor(team, x, y) {
-        super(team, x, y, "ranged");
+        super(team, x, y, "ranged", "hit");
         this.type = 'Archer';
         this.range *= 5;
         this.health = 80;
-        this.projectileType = "hit";
     }
 }
 
