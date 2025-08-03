@@ -144,6 +144,7 @@ const unitColors = {
     Infantry: 'lightblue',
     Archer: 'lightgreen',
     Commander: 'lightcoral',
+    HeavyInfantry: `grey`
 }
 
 const maxAttempts = 12
@@ -675,14 +676,19 @@ function loadUnlockedUnits() {
 
 // runs the game logic
 let previousUnlocked = []
-function updateGame() {
+let lastUpdateTime = performance.now();
+
+function updateGameFrame(now) {
+    let delta = (now - lastUpdateTime) * (gameSpeed || 1) / 100;
+    lastUpdateTime = now;
+
     if (gameRunning) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-        createBattleGrid(); // Recreate the grid
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        createBattleGrid();
 
         for (let unit of currentUnits) {
-            unit.update(); // Update each unit's position and state
-            unit.draw(); // Draw each unit on the canvas
+            unit.update();
+            unit.draw();
         }
 
         for (let projectile of projectiles) {
@@ -692,25 +698,25 @@ function updateGame() {
     } else if (!gameStarted) {
         if (previousUnlocked !== unlockedUnits) {
             loadUnlockedUnits();
-            previousUnlocked = unlockedUnits
+            previousUnlocked = unlockedUnits;
         }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-        createBattleGrid(); // Recreate the grid
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        createBattleGrid();
 
         for (let unit of currentUnits) {
-            unit.draw(); // Draw each unit on the canvas
+            unit.draw();
         }
     }
+
+    requestAnimationFrame(updateGameFrame);
 }
 
-let gameUpdateLoop = setInterval(updateGame, 100 / gameSpeed)
+requestAnimationFrame(updateGameFrame);
+
 speedInput.addEventListener('input', function() {
     gameSpeed = Number(speedInput.value) || 1;
     speedText.textContent = `Speed: ${gameSpeed}`;
-
-    clearInterval(gameUpdateLoop)
-    gameUpdateLoop = setInterval(updateGame, 100 / gameSpeed)
 });
 
 
