@@ -218,6 +218,54 @@ class Projectile {
     }
 }
 
+class AOEprojectile extends Projectile {
+    constructor(teamCasted, x, y, radius, dx, dy, speed, damage, range) {
+        super(teamCasted, x, y, radius, dx, dy, speed, damage);
+        this.range = range;
+    }
+
+    checkAOE(newX, newY) {
+        for (let unit of currentUnits) {
+            if (unit === this || unit.isDead || unit.team == this.teamCasted) {
+                continue;
+            }
+
+            const directionX = newX - unit.x;
+            const directionY = newY - unit.y;
+            const distance = Math.sqrt(directionX * directionX + directionY * directionY);
+
+            if (distance < this.range) {
+                return unit; // Collision detected
+            }
+        }
+    }
+
+    update() {
+        const distance = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+        const normalizedDirectionX = this.dx / distance;
+        const normalizedDirectionY = this.dy / distance;
+
+        const newX = this.x + normalizedDirectionX * this.speed;
+        const newY = this.y + normalizedDirectionY * this.speed;
+
+        const hit = this.checkUnitCollision(newX, newY)
+        if (!hit) {
+            this.x = newX
+            this.y = newY
+        } else {
+            hit.takeDamage(this.damage)
+            let otherHits = this.checkAOE(hit.x. hit.y)
+            for (let otherHit of otherHits) {
+                otherHit.takeDamage(this.damage)
+            }
+            
+            projectiles = projectiles.filter(p => p !== this);
+        }
+    }
+
+
+}
+
 class Unit {
     constructor(team, x, y, behavior) {
         this.team = team; // team the unit belongs to
@@ -242,6 +290,8 @@ class Unit {
         this.radius = 10 
 
         this.behavior = behavior || "";
+
+        this.projectileType = "";
         currentUnits.push(this); // Add the new unit to the current units array
     }
 
@@ -278,7 +328,11 @@ class Unit {
                         this.move(target.x, target.y);
                     } else {
                         if (this.currentAttackCooldown <= 0) {
-                            let newProjectile = new Projectile(this.team, this.x, this.y, 5, directionX, directionY, 2, this.attackPower)
+                            if (this.projectileType == "hit") {
+                                new Projectile(this.team, this.x, this.y, 5, directionX, directionY, 2, this.attackPower)
+                            } else if (this.projectileType == "aoe") {
+                                // aoe projectile new here :)
+                            }
                             this.currentAttackCooldown = this.attackCooldown; // Reset cooldown
                         } else {
                             this.currentAttackCooldown -= 1 / 60; // Decrease cooldown based on game speed
@@ -404,7 +458,7 @@ class Unit {
         if (this.health <= 0) {
             console.log(`${this.type} has died`)
             this.isDead = true; // Mark the unit as dead if health is 0 or less
-            this.isBuffed = false;
+            this.beingBuffed = false;
             this.health = 0; // Ensure health does not go below 0
         }
     }
@@ -632,7 +686,7 @@ let gameSpeed = 1
 speedText.textContent = `Speed: ${gameSpeed}`;
 
 
-let currentUnitType = 'Soldier'; // default unit type
+let currentUnitType = unlockedUnits[1]; // default unit type
 unitType.addEventListener('input', function() {
     currentUnitType = unitType.value;
     console.log(`Selected unit type: ${currentUnitType}`);
@@ -878,9 +932,10 @@ canvas.addEventListener('mousemove', function(event) {
                 Attack: ${unit.attackPower}<br>
                 Range: ${unit.range}<br>
                 Speed: ${unit.speed}<br>
+                Resistance: ${unit.damageReduction}<br>
                 Description: ${unitDescriptions[unit.type]}<br>
                 ${unit.isDead ? "<span style='color:red'>DEAD</span>" : ""}
-                ${unit.beingBuffed ? "<span style='color:gold'>Buffed!</span>" : ""}
+                ${unit.beingBuffed && !unit.isDead ? "<span style='color:gold'>Buffed!</span>" : ""}
             `;
 
             // Add the menu to the body
