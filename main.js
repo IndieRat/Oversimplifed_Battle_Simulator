@@ -218,7 +218,7 @@ class Projectile {
     }
 }
 
-class AOEprojectile extends Projectile {
+class AOEProjectile extends Projectile {
     constructor(teamCasted, x, y, radius, dx, dy, speed, damage, range) {
         super(teamCasted, x, y, radius, dx, dy, speed, damage);
         this.range = range;
@@ -329,9 +329,11 @@ class Unit {
                     } else {
                         if (this.currentAttackCooldown <= 0) {
                             if (this.projectileType == "hit") {
-                                new Projectile(this.team, this.x, this.y, 5, directionX, directionY, 2, this.attackPower)
+                                let projectile = new Projectile(this.team, this.x, this.y, 5, directionX, directionY, 2, this.attackPower)
+                                console.log(`Created ${projectile.teamCasted} Projectile`)
                             } else if (this.projectileType == "aoe") {
-                                // aoe projectile new here :)
+                                let projectile = new AOEProjectile(this.team, this.x, this.y, this.radius, directionX, directionY, this.speed, this.attackPower, this.radius*3)
+                                console.log(`Created ${projectile.teamCasted} AOEProjectile`)
                             }
                             this.currentAttackCooldown = this.attackCooldown; // Reset cooldown
                         } else {
