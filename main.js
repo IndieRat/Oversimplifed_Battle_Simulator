@@ -553,9 +553,10 @@ class Infantry extends Unit {
 class Archer extends Unit {
     constructor(team, x, y) {
         super(team, x, y, "ranged");
-        this.type = 'Archer'
-        this.range *= 5
-        this.health = 80
+        this.type = 'Archer';
+        this.range *= 5;
+        this.health = 80;
+        this.projectileType = "hit";
     }
 }
 
@@ -567,7 +568,7 @@ class Commander extends Unit {
         this.originalAttackPower = 0;
         this.attackCooldown = this.originalAttackPower;
         this.originalSpeed = 1.5;
-        this.speed = this.originalSpeed
+        this.speed = this.originalSpeed;
         this.health = 80;
 
         this.unitsBuffed = [];
@@ -667,11 +668,11 @@ class Commander extends Unit {
 
 class HeavyInfantry extends Unit {
     constructor(team, x, y) {
-        super(team, x, y, "melee")
-        this.type = "HeavyInfantry"
-        this.health = 120
-        this.damageReduction = 15
-        this.speed = 0.85
+        super(team, x, y, "melee");
+        this.type = "HeavyInfantry";
+        this.health = 120;
+        this.damageReduction = 15;
+        this.speed = 0.85;
     }
 }
 
@@ -682,11 +683,11 @@ let currentUnits = []; // array to store current units on the battlefield
 let gameStarted = false; // flag to check if the battle/game has started
 let gameRunning = false; // flag to check if the game is running
 let gamePaused = false; // flag to check if the game is paused
-let gameSpeed = 1
+let gameSpeed = 1;
 speedText.textContent = `Speed: ${gameSpeed}`;
 
 
-let currentUnitType = unlockedUnits[1]; // default unit type
+let currentUnitType = unlockedUnits[0]; // default unit type
 unitType.addEventListener('input', function() {
     currentUnitType = unitType.value;
     console.log(`Selected unit type: ${currentUnitType}`);
