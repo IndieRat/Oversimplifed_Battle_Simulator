@@ -587,7 +587,7 @@ class Commander extends Unit {
         this.health = 85;
 
         this.isFleeing = false;
-        this.isAggro = false
+        this.isAggro = false;
 
         this.unitsBuffed = [];
         
@@ -621,12 +621,12 @@ class Commander extends Unit {
             }
 
             let area = info["area"]
-            if (area) {
+            if (area !== null) {
                 const directionX = area.x - this.x;
                 const directionY = area.y - this.y;
                 const distance = Math.sqrt(directionX * directionX + directionY * directionY);
                 if (distance > 1) {
-                    this.move(area.x, area.y)
+                    this.move(area.x, area.y);
                 }
             } else {
                 let largestDistance = Infinity;
@@ -649,7 +649,7 @@ class Commander extends Unit {
                     }
                 }
 
-                if (nearestAlly) {
+                if (nearestAlly && typeof nearestAlly.x === "number" && typeof nearestAlly.y === "number") {
                     this.isFleeing = true;
                     this.move(nearestAlly.x, nearestAlly.y);
                 } else {
@@ -664,7 +664,7 @@ class Commander extends Unit {
                 const directionX = target.x - this.x;
                 const directionY = target.y - this.y;
                 const distance = Math.sqrt(directionX * directionX + directionY * directionY);
-                if (distance <= this.range/2 || this.isFleeing == true && distance <= this.range || this.isAgro && distance <= this.range) {
+                if (distance <= this.range/2 || this.isFleeing == true && distance <= this.range || this.isAggro && distance <= this.range) {
                      if (this.currentAttackCooldown <= 0) {
                         let projectile = new Projectile(this.team, this.x, this.y, 5, directionX, directionY, 2, this.attackPower)
                         console.log(`Created ${projectile.teamCasted} Projectile`)
@@ -725,7 +725,7 @@ class Mage extends Unit {
         this.type = "Mage";
         this.range *= 5.5;
         this.attackCooldown = this.attackCooldown*3
-        this.attackPower = this.attackPower/2
+        this.attackPower = this.attackPower/1.5
         this.health = 90;
 
     }
