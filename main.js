@@ -252,7 +252,7 @@ class AOEProjectile extends Projectile {
             this.y = newY;
         } else {
             hit.takeDamage(this.damage);
-            let otherHits = this.checkAOE(hit.x. hit.y);
+            let otherHits = this.checkAOE(hit.x, hit.y);
             for (let otherHit of otherHits) {
                 otherHit.takeDamage(this.damage);
             }
@@ -691,7 +691,7 @@ class Mage extends Unit {
     constructor(team, x, y) {
         super(team, x, y, "ranged", "aoe");
         this.type = "Mage";
-        this.range *= 7.5;
+        this.range *= 5.5;
         this.attackCooldown = this.attackCooldown/1.2
         this.attackPower = this.currentAttackCooldown/2
         this.health = 90;
@@ -859,6 +859,7 @@ function handleCanvasClick(event) {
                                 break;
                             case 'Mage':
                                 unit = new Mage(boundaryTeam, unitX, unitY);
+                                break;
                             default:
                                 unit = new Unit(boundaryTeam, unitX, unitY, "melee");
                                 break;
