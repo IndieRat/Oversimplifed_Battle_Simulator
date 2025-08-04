@@ -237,7 +237,7 @@ class AOEProjectile extends Projectile {
                 hits.push(unit);
             }
         }
-        return hit;
+        return hits;
     }
 
     update() {
