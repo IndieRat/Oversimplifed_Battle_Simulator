@@ -223,6 +223,7 @@ class AOEProjectile extends Projectile {
     }
 
     checkAOE(newX, newY) {
+        let hits = [];
         for (let unit of currentUnits) {
             if (unit === this || unit.isDead || unit.team == this.teamCasted) {
                 continue;
@@ -233,9 +234,10 @@ class AOEProjectile extends Projectile {
             const distance = Math.sqrt(directionX * directionX + directionY * directionY);
 
             if (distance < this.range) {
-                return unit; // Collision detected
+                hits.push(unit);
             }
         }
+        return hit;
     }
 
     update() {
