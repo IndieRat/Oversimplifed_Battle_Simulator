@@ -588,7 +588,7 @@ class Commander extends Unit {
                         ally.applySpeedBuff(50);
                         this.unitsBuffed.push(ally);
                     
-                    } else if (!ally.isBuffed) {
+                    } else if (!ally.beingBuffed) {
                         ally.applyDamageBuff(25);
                         ally.applySpeedBuff(50);
                     }
@@ -645,7 +645,7 @@ class Commander extends Unit {
                 unit.removeDamageBuff();
                 unit.removeSpeedBuff();
             }
-            this.unitsBuffed = []
+            this.unitsBuffed = [];
         }
     }
 
