@@ -127,7 +127,7 @@ const unitType = document.getElementById('unitType');
 const fixedRows = 15; // number of rows in the grid
 const fixedCols = 10; // number of columns in the grid
 
-let unlockedUnits = ['Infantry', 'Archer', 'Commander', 'HeavyInfantry']; // list of unlocked units
+let unlockedUnits = ['Infantry', 'Archer', 'Commander', 'HeavyInfantry', 'Mage']; // list of unlocked units
 let occupiedCells = []; // array to keep track of occupied cells in the grid
 let projectiles = [];
 
@@ -141,7 +141,8 @@ const unitColors = {
     Infantry: 'lightblue',
     Archer: 'lightgreen',
     Commander: 'lightcoral',
-    HeavyInfantry: `grey`
+    HeavyInfantry: `grey`,
+    Mage: `navyblue`
 };
 
 const maxAttempts = 12;
@@ -686,6 +687,18 @@ class HeavyInfantry extends Unit {
     }
 }
 
+class Mage extends Unit {
+    constructor(team, x, y) {
+        super(team, x, y, "ranged", "aoe");
+        this.type = "Mage";
+        this.range *= 7.5;
+        this.attackCooldown = this.attackCooldown/1.2
+        this.attackPower = this.currentAttackCooldown/2
+        this.health = 90;
+
+    }
+}
+
 let currentUnits = []; // array to store current units on the battlefield
 
 
@@ -802,36 +815,32 @@ window.addEventListener('resize', function() {
 createBattleGrid();
 
 // gets if we have clicked on the canvas
-let boundaryTeam  = ''
-canvas.addEventListener('mousedown', function(event) {
+let boundaryTeam  = '';
+let mouseDown = false;
+
+function handleCanvasClick(event) {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
     if (!gameStarted) {
-        // checks if its a left or right click and the click is within the bounds of the canvas
         if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
-            
-           
-            // snaps the click position to the grid
             const cellWidth = canvas.width / fixedRows;
             const cellHeight = canvas.height / fixedCols;
             const gridX = Math.floor(x / cellWidth);
             const gridY = Math.floor(y / cellHeight);
 
-             // checks if its on the player side or enemy side
-            boundaryTeam  = ''
+            boundaryTeam  = '';
             if (gridY < fixedCols/2) {
                 boundaryTeam = 'enemy';
             } else {
                 boundaryTeam = 'player';
             }
 
-            let unitX = gridX * cellWidth + cellWidth / 2; // Center the unit in the cell
-            let unitY = gridY * cellHeight + cellHeight / 2; // Center
+            let unitX = gridX * cellWidth + cellWidth / 2;
+            let unitY = gridY * cellHeight + cellHeight / 2;
 
-            if (event.button === 0) { // left click
-            
+            if (event.buttons === 1) { // left click or hold
                 if (!occupiedCells.includes(`${gridX},${gridY}`)) {
                     if (currentUnitType && unlockedUnits.includes(currentUnitType)) {
                         let unit = undefined;
@@ -848,52 +857,72 @@ canvas.addEventListener('mousedown', function(event) {
                             case 'HeavyInfantry':
                                 unit = new HeavyInfantry(boundaryTeam, unitX, unitY);
                                 break;
+                            case 'Mage':
+                                unit = new Mage(boundaryTeam, unitX, unitY);
                             default:
                                 unit = new Unit(boundaryTeam, unitX, unitY, "melee");
                                 break;
                         }
-                        
-                        occupiedCells.push(`${gridX},${gridY}`); // Mark the cell as occupied
-                        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-                        createBattleGrid(); // Recreate the grid
+                        occupiedCells.push(`${gridX},${gridY}`);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        createBattleGrid();
                         for (let unit of currentUnits) {
-                            unit.draw(); // Redraw units
+                            unit.draw();
                         }
-                        
                     } else {
                         console.log("No unit type selected.");
                     }
                 }
-            } else if (event.button === 2) { // right click
+            } else if (event.buttons === 2) { // right click or hold
                 if (occupiedCells.includes(`${gridX},${gridY}`)) {
-                    // Find the unit at the clicked position
-                    let unitX = gridX * cellWidth + cellWidth / 2; // Center the unit in the cell
-                    let unitY = gridY * cellHeight + cellHeight / 2; // Center
+                    let unitX = gridX * cellWidth + cellWidth / 2;
+                    let unitY = gridY * cellHeight + cellHeight / 2;
                     const index = currentUnits.findIndex(unit => unit.x === unitX && unit.y === unitY);
                     console.log(`Removing unit at (${gridX}, ${gridY}) - Index: ${index}`);
                     if (index !== -1) {
-                        currentUnits.splice(index, 1); // Remove the unit from the current units array
-                        occupiedCells = occupiedCells.filter(cell => cell !== `${gridX},${gridY}`); // Remove the occupied cell
-                        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-                        createBattleGrid(); // Recreate the grid
+                        currentUnits.splice(index, 1);
+                        occupiedCells = occupiedCells.filter(cell => cell !== `${gridX},${gridY}`);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        createBattleGrid();
                         for (let unit of currentUnits) {
-                            unit.draw(); // Redraw remaining units
+                            unit.draw();
                         }
                     }
                 }
             }
-
         }
     }
+}
+
+canvas.addEventListener('mousedown', function(event) {
+    mouseDown = true;
+    handleCanvasClick(event);
 });
+
+canvas.addEventListener('mouseup', function() {
+    mouseDown = false;
+});
+
+canvas.addEventListener('mouseleave', function() {
+    mouseDown = false;
+});
+
+canvas.addEventListener('mousemove', function(event) {
+    if (mouseDown) {
+        handleCanvasClick(event);
+    }
+});
+
+
+
 
 // gets if we are hovering over a unit
 
 let unitDescriptions = {
     Infantry: "The general combat unit, well rounded, built for melee",
     Archer: "Weaker yet fires a projectile at whoever is in its range and is the closest",
-    Commander: "The general buffers, gives all nearby units a attack and speed buff"
-
+    Commander: "The general buffers, gives all nearby units a attack and speed buff",
+    HeavyInfantry: "A tanker Infantry, does the same thing, just 20+ health and a damage reduction"
 }
 
 canvas.addEventListener('mousemove', function(event) {
