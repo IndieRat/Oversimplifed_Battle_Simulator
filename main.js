@@ -749,7 +749,7 @@ let previousUnlocked = []
 let lastUpdateTime = performance.now();
 
 function updateGameFrame(now) {
-    let delta = (now - lastUpdateTime) * (gameSpeed || 1) / 100;
+    let delta = (now - lastUpdateTime) * (gameSpeed) / 100;
     lastUpdateTime = now;
 
     if (gameRunning) {
