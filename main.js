@@ -785,7 +785,11 @@ function updateGameFrame(now) {
 requestAnimationFrame(updateGameFrame);
 
 speedInput.addEventListener('input', function() {
-    gameSpeed = Number(speedInput.value) || 1;
+    gameSpeed = Number(speedInput.value);
+    if (gamePaused == NaN) {
+        gameSpeed = 1
+    }
+
     speedText.textContent = `Speed: ${gameSpeed}`;
 });
 
