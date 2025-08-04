@@ -693,8 +693,6 @@ let currentUnits = []; // array to store current units on the battlefield
 let gameStarted = false; // flag to check if the battle/game has started
 let gameRunning = false; // flag to check if the game is running
 let gamePaused = false; // flag to check if the game is paused
-let gameSpeed = 1;
-speedText.textContent = `Speed: ${gameSpeed}`;
 
 
 let currentUnitType = unlockedUnits[0]; // default unit type
