@@ -117,9 +117,6 @@ const creditsTexts = ["Made by Rumor", "Made by Dante Swofford", "Rumor is cool 
 const randomText = creditsTexts[randomInt(1, creditsTexts.length)];
 credits.textContent = randomText;
 
-const speedText = document.getElementById('speedText');
-const speedInput = document.getElementById('speedInput');
-
 const startButton = document.getElementById('startBattle');
 const resetButton = document.getElementById('resetBattle');
 const pauseButton = document.getElementById('togglePause');
@@ -490,12 +487,12 @@ class Unit {
 
     applySpeedBuff(percent) {
         let newSpeed = Math.round(this.speed + this.originalSpeed * (percent/100))
-        this.speed = newSpeed
+        this.speed = newSpeed;
         this.beingBuffed = true;
     }
 
     removeSpeedBuff(percent) {
-        this.speed = this.originalSpeed
+        this.speed = this.originalSpeed;
         this.beingBuffed = false;
     }
 
@@ -529,9 +526,9 @@ class Unit {
             const distance = Math.sqrt(directionX * directionX + directionY * directionY);
             if (distance <= this.range) {
                 alliesInRange.push(otherUnit);
-                allies.push(otherUnit)
+                allies.push(otherUnit);
             } else {
-                allies.push(otherUnit)
+                allies.push(otherUnit);
             }
         }
 
@@ -746,12 +743,9 @@ function loadUnlockedUnits() {
 
 // runs the game logic
 let previousUnlocked = []
-let lastUpdateTime = performance.now();
+
 
 function updateGameFrame(now) {
-    let delta = (now - lastUpdateTime) * (gameSpeed) / 100;
-    lastUpdateTime = now;
-
     if (gameRunning) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         createBattleGrid();
@@ -784,14 +778,6 @@ function updateGameFrame(now) {
 
 requestAnimationFrame(updateGameFrame);
 
-speedInput.addEventListener('input', function() {
-    gameSpeed = Number(speedInput.value);
-    if (gamePaused == NaN) {
-        gameSpeed = 1
-    }
-
-    speedText.textContent = `Speed: ${gameSpeed}`;
-});
 
 
 window.addEventListener('resize', function() {
