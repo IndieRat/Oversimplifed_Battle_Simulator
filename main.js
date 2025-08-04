@@ -127,7 +127,7 @@ const unitType = document.getElementById('unitType');
 const fixedRows = 15; // number of rows in the grid
 const fixedCols = 10; // number of columns in the grid
 
-let unlockedUnits = ['Infantry', 'Archer', 'Commander', 'HeavyInfantry', 'Mage']; // list of unlocked units
+let unlockedUnits = ['Infantry', 'Archer', 'Commander', 'HeavyInfantry', 'Mage', 'Medic']; // list of unlocked units
 let occupiedCells = []; // array to keep track of occupied cells in the grid
 let projectiles = [];
 
@@ -142,7 +142,8 @@ const unitColors = {
     Archer: 'lightgreen',
     Commander: 'lightcoral',
     HeavyInfantry: `grey`,
-    Mage: `darkblue`
+    Mage: `darkblue`,
+    Medic: `lightyellow`
 };
 
 const maxAttempts = 12;
@@ -281,13 +282,15 @@ class Unit {
 
         this.isDead = false; // flag to check if the unit is dead
         this.beingBuffed = false;
+        this.finishedDeath = false;
 
         this.health = 100; // default health for the unit
+        this.maxHealth = 100;
         this.originalAttackPower = 10; // origin attack power for the unit
         this.attackPower = this.originalAttackPower; // current attack power for the unit
         
-        this.attackCooldown = 0.5; // cooldown for the unit's attack
-        this.currentAttackCooldown = 0.5; // cooldown for the unit's attack
+        this.attackCooldown = 1.5; // cooldown for the unit's attack
+        this.currentAttackCooldown = 1.5; // cooldown for the unit's attack
         this.damageReduction = 0;
 
         this.originalSpeed = 1;
@@ -365,11 +368,44 @@ class Unit {
         let color = '';
         if (this.isDead) {
             color = 'gray'; // Color for dead units
+
+            ctx.save();
+            if (!this.explosionBits) {
+                // Generate explosion bits only once
+                this.explosionBits = [];
+                const bitCount = 12;
+                for (let i = 0; i < bitCount; i++) {
+                    const angle = (2 * Math.PI * i) / bitCount;
+                    const speed = randomInt(2, 5);
+                    this.explosionBits.push({
+                        x: this.x,
+                        y: this.y,
+                        dx: Math.cos(angle) * speed,
+                        dy: Math.sin(angle) * speed,
+                        radius: randomInt(2, 4),
+                        color: color,
+                        alpha: 1
+                    });
+                }
+            }
+            for (let bit of this.explosionBits) {
+                bit.x += bit.dx;
+                bit.y += bit.dy;
+                bit.alpha -= 0.03;
+                ctx.globalAlpha = Math.max(bit.alpha, 0);
+                drawCircle(bit.x, bit.y, bit.radius, bit.color);
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+            if (!this.finishedDeath) {
+                setTimeout(() => { this.finishedDeath = true; }, 350);
+            }
         } else {
             color = unitColors[this.type] || 'lightgray'; // Default color based on unit type
-        }
-        drawCircle(this.x, this.y, this.radius, color); // Draw the unit as a circle with its type color
-        this.drawHealth();
+            drawCircle(this.x, this.y, this.radius, color); // Draw the unit as a circle with its type color
+            this.drawHealth();
+        }   
+        
     }
 
     drawHealth() {
@@ -520,7 +556,7 @@ class Unit {
         let alliesInRange = [];
         let allies = [];
         for (let otherUnit of currentUnits) {
-            if (otherUnit == this || otherUnit.behavior == "" || otherUnit.isDead || otherUnit.team !== this.team) {
+            if (otherUnit == this || otherUnit.isDead || otherUnit.team !== this.team) {
                 continue;
             }
 
@@ -571,20 +607,22 @@ class Archer extends Unit {
         this.attackCooldown = this.attackCooldown*2.5
         this.range *= 5;
         this.health = 80;
+        this.maxHealth = 80;
     }
 }
 
 class Commander extends Unit {
     constructor(team, x, y) {
-        super(team, x, y);
+        super(team, x, y, "support");
         this.type = "Commander";
         this.range *= 2;
         this.originalAttackPower = 5;
         this.attackPower = 5;
-        this.attackCooldown = 1;
+        this.attackCooldown = 3;
         this.originalSpeed = 3;
         this.speed = this.originalSpeed;
         this.health = 85;
+        this.maxHealth = 85;
 
         this.isFleeing = false;
         this.isAggro = false;
@@ -697,14 +735,16 @@ class Commander extends Unit {
             color = 'gray'; // Color for dead units
         } else {
             color = unitColors[this.type] || 'lightgray'; // Default color based on unit type
-        }
-        drawCircle(this.x, this.y, this.radius, color); // Draw the unit as a circle with its type color
-        this.drawHealth();
+            
+            drawCircle(this.x, this.y, this.radius, color); // Draw the unit as a circle with its type color
+            this.drawHealth();
 
-        ctx.save();
-        ctx.globalAlpha = 0.15;
-        drawCircle(this.x, this.y, this.range, 'yellow');
-        ctx.restore();
+            ctx.save();
+            ctx.globalAlpha = 0.15;
+            drawCircle(this.x, this.y, this.range, 'yellow');
+            ctx.restore();
+        }
+        
     }
     
 }
@@ -714,6 +754,7 @@ class HeavyInfantry extends Unit {
         super(team, x, y, "melee");
         this.type = "HeavyInfantry";
         this.health = 120;
+        this.maxHealth = 120;
         this.damageReduction = 15;
         this.speed = 0.85;
     }
@@ -724,10 +765,149 @@ class Mage extends Unit {
         super(team, x, y, "ranged", "aoe");
         this.type = "Mage";
         this.range *= 5.5;
-        this.attackCooldown = this.attackCooldown*3
-        this.attackPower = this.attackPower/1.5
+        this.attackCooldown = this.attackCooldown*2
+        this.attackPower = this.attackPower/2
         this.health = 90;
+        this.maxHealth = 90;
 
+    }
+}
+
+class Medic extends Unit {
+    constructor(team, x, y) {
+        super(team, x, y, "support");
+        this.type = "Medic";
+        this.health = 80;
+        this.maxHealth = 80;
+        this.attackPower = 5;
+        this.range *= 2.5;
+
+        this.healingUnits = [];
+
+        this.healFrames = 120
+        this.currentBeams = 0;
+        this.maxBeams = 3;
+    }
+    
+    update() {
+        if (!this.isDead) {
+            let info = this.findAlliesInRange();
+            let allies = info["allies"];
+
+            // Filter allies that need healing (health < max and not dead)
+            let healableAllies = allies.filter(unit => unit.health < unit.maxHealth && !unit.isDead);
+
+            // Sort by lowest health first
+            healableAllies.sort((a, b) => a.health - b.health);
+
+            // Only keep up to maxBeams
+            this.healingUnits = healableAllies.slice(0, this.maxBeams);
+
+            // Gradually heal each selected unit
+            if (this.healingUnits.length > 0) {
+                for (let unit of this.healingUnits) {
+                    // Heal a small amount per frame
+                    unit.health += (this.attackPower * (1 / this.healFrames));
+                    if (unit.health > unit.maxHealth) {
+                        unit.health = unit.maxHealth;
+                    }
+                }
+            }
+
+            // Remove units that are fully healed or dead from healingUnits
+            this.healingUnits = this.healingUnits.filter(unit => unit.health < unit.maxHealth && !unit.isDead);
+
+            // Optionally, follow the lowest health ally if any
+            let area = info["area"];
+            if (area) {
+                // Find nearest enemy to the group area
+                let nearestEnemy = null;
+                let minDist = Infinity;
+                for (let unit of currentUnits) {
+                    if (unit.team !== this.team && !unit.isDead) {
+                        let dist = Math.sqrt((unit.x - area.x) ** 2 + (unit.y - area.y) ** 2);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearestEnemy = unit;
+                        }
+                    }
+                }
+                let behindX = area.x;
+                let behindY = area.y;
+                if (nearestEnemy) {
+                    // Vector from enemy to group area
+                    let dx = area.x - nearestEnemy.x;
+                    let dy = area.y - nearestEnemy.y;
+                    let len = Math.sqrt(dx * dx + dy * dy) || 1;
+                    // Stay 50px behind the group area (adjust as needed)
+                    behindX = area.x + (dx / len) * this.range/2;
+                    behindY = area.y + (dy / len) * this.range/2;
+                }
+                this.move(behindX, behindY);
+            } else {
+                let largestDistance = Infinity;
+                let nearestAlly = {};
+                for (let otherUnit of currentUnits) {
+                    if (otherUnit == this || otherUnit.isDead || otherUnit.behavior == "" || otherUnit.team !== this.team) {
+                        continue;
+                    }
+                    const directionX = this.x - otherUnit.x;
+                    const directionY = this.y - otherUnit.y;
+                    const distance = Math.sqrt(directionX * directionX + directionY * directionY);
+                    if (distance < largestDistance) {
+                        nearestAlly = {
+                            x: otherUnit.x,
+                            y: otherUnit.y
+                        };
+                        largestDistance = distance;
+                    }
+                }
+                if (nearestAlly && typeof nearestAlly.x === "number" && typeof nearestAlly.y === "number") {
+                    // Try to stay behind the nearest ally (relative to nearest enemy)
+                    let nearestEnemy = null;
+                    let minDist = Infinity;
+                    for (let unit of currentUnits) {
+                        if (unit.team !== this.team && !unit.isDead) {
+                            let dist = Math.sqrt((unit.x - nearestAlly.x) ** 2 + (unit.y - nearestAlly.y) ** 2);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearestEnemy = unit;
+                            }
+                        }
+                    }
+                    let behindX = nearestAlly.x;
+                    let behindY = nearestAlly.y;
+                    if (nearestEnemy) {
+                        let dx = nearestAlly.x - nearestEnemy.x;
+                        let dy = nearestAlly.y - nearestEnemy.y;
+                        let len = Math.sqrt(dx * dx + dy * dy) || 1;
+                        behindX = nearestAlly.x + (dx / len) * this.range/2;
+                        behindY = nearestAlly.y + (dy / len) * this.range/2;
+                    }
+                    this.move(behindX, behindY);
+                }
+            }
+        }
+    }
+
+    draw() {
+        let color = '';
+        if (this.isDead) {
+            color = 'gray'; // Color for dead units
+        } else {
+            color = unitColors[this.type] || 'lightgray'; // Default color based on unit type
+            
+            drawCircle(this.x, this.y, this.radius, color); // Draw the unit as a circle with its type color
+            this.drawHealth();
+
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            for (let unit of this.healingUnits) {
+                drawLine(this.x, this.y, unit.x, unit.y, 4, 'lightyellow');
+            }
+            ctx.restore();
+        }
+        
     }
 }
 
@@ -769,16 +949,53 @@ function createBattleGrid() {
 
 function loadUnlockedUnits() {
     if (document.getElementById("unitType")) {
-       let unitTypeSelect = document.getElementById("unitType");
+        let unitTypeSelect = document.getElementById("unitType");
         unitTypeSelect.innerHTML = ''; // Clear existing options
+
+        // Categorize units by behavior
+        const categories = {
+            Melee: [],
+            Ranged: [],
+            Support: [],
+            Extras: []
+        };
+
         unlockedUnits.forEach(unit => {
-            // Check if the option already exists before adding it
-            // This prevents duplicates in the dropdown
-            if (!unitTypeSelect.querySelector(`option[value="${unit}"]`)) { 
-                let option = createElement('option', unit);
-                option.value = unit;
-                option.textContent = unit;
-                unitTypeSelect.appendChild(option);
+            // Determine behavior by unit type
+            let behavior = '';
+            switch (unit) {
+                case 'Infantry':
+                case 'HeavyInfantry':
+                    behavior = 'Melee';
+                    break;
+                case 'Archer':
+                case 'Mage':
+                    behavior = 'Ranged';
+                    break;
+                case 'Commander':
+                case 'Medic':
+                    behavior = 'Support';
+                    break;
+                default:
+                    behavior = 'Extras';
+            }
+            if (categories[behavior]) {
+                categories[behavior].push(unit);
+            }
+        });
+
+        // Add options grouped by category
+        Object.keys(categories).forEach(category => {
+            if (categories[category].length > 0) {
+                let optgroup = document.createElement('optgroup');
+                optgroup.label = category;
+                categories[category].forEach(unit => {
+                    let option = document.createElement('option');
+                    option.value = unit;
+                    option.textContent = unit;
+                    optgroup.appendChild(option);
+                });
+                unitTypeSelect.appendChild(optgroup);
             }
         });
     }
@@ -794,8 +1011,12 @@ function updateGameFrame(now) {
         createBattleGrid();
 
         for (let unit of currentUnits) {
-            unit.update();
-            unit.draw();
+            if (!unit.finishedDeath) {
+                unit.update();
+                unit.draw();
+            } else {
+                currentUnits = currentUnits.filter(other => other !== unit)
+            }
         }
 
         for (let projectile of projectiles) {
@@ -892,6 +1113,9 @@ function handleCanvasClick(event) {
                             case 'Mage':
                                 unit = new Mage(boundaryTeam, unitX, unitY);
                                 break;
+                            case 'Medic':
+                                unit = new Medic(boundaryTeam, unitX, unitY);
+                                break;
                             default:
                                 unit = new Unit(boundaryTeam, unitX, unitY, "melee");
                                 break;
@@ -946,16 +1170,13 @@ canvas.addEventListener('mousemove', function(event) {
     }
 });
 
-
-
-
-// gets if we are hovering over a unit
-
 let unitDescriptions = {
-    Infantry: "The general combat unit, well rounded, built for melee",
-    Archer: "Weaker yet fires a projectile at whoever is in its range and is the closest",
-    Commander: "The general buffers, gives all nearby units a attack and speed buff",
-    HeavyInfantry: "A tanker Infantry, does the same thing, just 20+ health and a damage reduction"
+    Infantry: "The backbone of your army, this versatile melee unit is effective in most combat situations.",
+    Archer: "A ranged unit that fires projectiles at the closest enemy within its sight. While not as durable as other units, they are crucial for providing support from a distance.",
+    Commander: "A powerful leader who inspires nearby troops. The Commander provides a significant attack and speed boost to all allied units in their radius. This buff does not stack, so careful positioning is key.",
+    HeavyInfantry: "A heavily armored and more resilient version of the standard Infantry. These units are excellent at soaking up damage, thanks to their increased health and damage reduction.",
+    Mage: "A powerful magic-user who deals damage with slower but more potent projectiles. Their spells explode on impact, dealing light damage to all enemies in a small area.",
+    Medic: "A dedicated support unit that focuses on keeping your troops in the fight. The Medic fires a healing beam that slowly restores the health of injured allies. A Medic can support up to three units at a time."
 }
 
 canvas.addEventListener('mousemove', function(event) {
@@ -995,7 +1216,7 @@ canvas.addEventListener('mousemove', function(event) {
                 <strong>${unit.type}</strong><br>
                 Team: ${unit.team}<br>
                 Health: ${unit.health}<br>
-                Attack: ${unit.attackPower}<br>
+                Power: ${unit.attackPower}<br>
                 Range: ${unit.range}<br>
                 Speed: ${unit.speed}<br>
                 Resistance: ${unit.damageReduction}<br>
