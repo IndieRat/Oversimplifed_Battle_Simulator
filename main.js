@@ -114,11 +114,11 @@ window.addEventListener('resize', resizeCanvas);
 const credits = document.getElementById('credits');
 const creditsTexts = ["Made by Rumor", "Made by Dante Swofford", "Rumor is cool B)", "Dante is cool B)" || "Made by Rumor who is known as Dante Swofford", "Made by Dante Swofford who is known as Rumor"];
 
-const randomText = creditsTexts[randomInt(1, creditsTexts.length)]
-credits.textContent = randomText
+const randomText = creditsTexts[randomInt(1, creditsTexts.length)];
+credits.textContent = randomText;
 
-const speedText = document.getElementById('speedText')
-const speedInput = document.getElementById('speedInput')
+const speedText = document.getElementById('speedText');
+const speedInput = document.getElementById('speedInput');
 
 const startButton = document.getElementById('startBattle');
 const resetButton = document.getElementById('resetBattle');
@@ -145,9 +145,9 @@ const unitColors = {
     Archer: 'lightgreen',
     Commander: 'lightcoral',
     HeavyInfantry: `grey`
-}
+};
 
-const maxAttempts = 12
+const maxAttempts = 12;
 const angleStep = Math.PI / 12;
 
 // classes and their inherits
@@ -157,14 +157,14 @@ class Projectile {
         this.x = x;
         this.y = y;
 
-        this.radius = radius
+        this.radius = radius;
         
         this.dx = dx;
         this.dy = dy;
 
         this.speed = speed;
         this.damage = damage;
-        projectiles.push(this)
+        projectiles.push(this);
     }
 
     checkUnitCollision(newX, newY) {
@@ -201,19 +201,19 @@ class Projectile {
         const newX = this.x + normalizedDirectionX * this.speed;
         const newY = this.y + normalizedDirectionY * this.speed;
 
-        const hit = this.checkUnitCollision(newX, newY)
+        const hit = this.checkUnitCollision(newX, newY);
         if (!hit) {
-            this.x = newX
-            this.y = newY
+            this.x = newX;
+            this.y = newY;
         } else {
-            hit.takeDamage(this.damage)
+            hit.takeDamage(this.damage);
             
             projectiles = projectiles.filter(p => p !== this);
         }
     }
 
     draw() {
-        let color = teamColors[this.teamCasted] || teamColors['neutral']
+        let color = teamColors[this.teamCasted] || teamColors['neutral'];
         drawCircle(this.x, this.y, this.radius, color);
     }
 }
@@ -248,15 +248,15 @@ class AOEProjectile extends Projectile {
         const newX = this.x + normalizedDirectionX * this.speed;
         const newY = this.y + normalizedDirectionY * this.speed;
 
-        const hit = this.checkUnitCollision(newX, newY)
+        const hit = this.checkUnitCollision(newX, newY);
         if (!hit) {
-            this.x = newX
-            this.y = newY
+            this.x = newX;
+            this.y = newY;
         } else {
-            hit.takeDamage(this.damage)
-            let otherHits = this.checkAOE(hit.x. hit.y)
+            hit.takeDamage(this.damage);
+            let otherHits = this.checkAOE(hit.x. hit.y);
             for (let otherHit of otherHits) {
-                otherHit.takeDamage(this.damage)
+                otherHit.takeDamage(this.damage);
             }
             
             projectiles = projectiles.filter(p => p !== this);
@@ -265,6 +265,12 @@ class AOEProjectile extends Projectile {
 
 
 }
+
+let unitTracker = {
+    player: 0,
+    enemy: 0
+}
+
 
 class Unit {
     constructor(team, x, y, behavior, projectileType) {
@@ -293,6 +299,12 @@ class Unit {
 
         this.projectileType = projectileType || "";
         currentUnits.push(this); // Add the new unit to the current units array
+   
+        // adds team count
+        if (this.team == "player") {
+            unitTracker.player += 1
+            unitTracker
+        }
     }
 
     update() {
@@ -689,6 +701,8 @@ speedText.textContent = `Speed: ${gameSpeed}`;
 
 
 let currentUnitType = unlockedUnits[0]; // default unit type
+
+
 unitType.addEventListener('input', function() {
     currentUnitType = unitType.value;
     console.log(`Selected unit type: ${currentUnitType}`);
@@ -820,9 +834,9 @@ canvas.addEventListener('mousedown', function(event) {
              // checks if its on the player side or enemy side
             boundaryTeam  = ''
             if (gridY < fixedCols/2) {
-                boundaryTeam = 'enemy'
+                boundaryTeam = 'enemy';
             } else {
-                boundaryTeam = 'player'
+                boundaryTeam = 'player';
             }
 
             let unitX = gridX * cellWidth + cellWidth / 2; // Center the unit in the cell
