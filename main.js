@@ -142,7 +142,7 @@ const unitColors = {
     Archer: 'lightgreen',
     Commander: 'lightcoral',
     HeavyInfantry: `grey`,
-    Mage: `navyblue`
+    Mage: `darkblue`
 };
 
 const maxAttempts = 12;
@@ -478,7 +478,7 @@ class Unit {
     }
 
     applyDamageBuff(percent) {
-        let newDamage = Math.round(this.attackPower + this.originalAttackPower * (percent/100));
+        let newDamage = Math.round(this.originalAttackPower + this.originalAttackPower * (percent/100));
         this.attackPower = newDamage;
         this.beingBuffed = true;
     }
@@ -489,7 +489,7 @@ class Unit {
     }
 
     applySpeedBuff(percent) {
-        let newSpeed = Math.round(this.speed + this.originalSpeed * (percent/100))
+        let newSpeed = Math.round(this.originalSpeed + this.originalSpeed * (percent/100))
         this.speed = newSpeed;
         this.beingBuffed = true;
     }
@@ -517,10 +517,10 @@ class Unit {
     }
 
     findAlliesInRange() {
-        let alliesInRange = []
-        let allies = []
+        let alliesInRange = [];
+        let allies = [];
         for (let otherUnit of currentUnits) {
-            if (otherUnit == this || otherUnit.behavior == "" || otherUnit.isDead || otherUnit.team != this.team) {
+            if (otherUnit == this || otherUnit.behavior == "" || otherUnit.isDead || otherUnit.team !== this.team) {
                 continue;
             }
 
@@ -579,11 +579,15 @@ class Commander extends Unit {
         super(team, x, y);
         this.type = "Commander";
         this.range *= 2;
-        this.originalAttackPower = 0;
-        this.attackCooldown = this.originalAttackPower;
-        this.originalSpeed = 1.5;
+        this.originalAttackPower = 5;
+        this.attackPower = 5;
+        this.attackCooldown = 1;
+        this.originalSpeed = 3;
         this.speed = this.originalSpeed;
-        this.health = 80;
+        this.health = 85;
+
+        this.isFleeing = false;
+        this.isAggro = false
 
         this.unitsBuffed = [];
         
@@ -592,27 +596,27 @@ class Commander extends Unit {
     update() {
         if (!this.isDead) {
             let inRange = [];
-            let info = this.findAlliesInRange()
-            let allies = info["allies"]
+            let info = this.findAlliesInRange();
+            let allies = info["allies"];
             if (allies.length > 0) {
                 for (let ally of allies) {
                     if (!this.unitsBuffed.includes(ally)) {
-                        ally.applyDamageBuff(25);
-                        ally.applySpeedBuff(50);
+                        
                         this.unitsBuffed.push(ally);
-                    
-                    } else if (!ally.beingBuffed) {
-                        ally.applyDamageBuff(25);
-                        ally.applySpeedBuff(50);
                     }
                     inRange.push(ally);
                 }
-            }
+            }   
 
-            for (let unit of this.unitsBuffed) {
-                if (!inRange.includes(unit) && unit.isBuffed) {
-                    unit.removeDamageBuff();
-                    unit.removeSpeedBuff();
+            if (this.unitsBuffed.length > 0) {
+                for (let unit of this.unitsBuffed) {
+                    if (!inRange.includes(unit)) {
+                        unit.removeDamageBuff();
+                        unit.removeSpeedBuff();
+                    } else if (unit) {
+                        unit.applyDamageBuff(25);
+                        unit.applySpeedBuff(50);
+                    }
                 }
             }
 
@@ -636,7 +640,7 @@ class Commander extends Unit {
                     const directionY = this.y - otherUnit.y;
                     const distance = Math.sqrt(directionX * directionX + directionY * directionY);
                     if (distance < largestDistance) {
-                        console.log(`Found ${otherUnit.type}`)
+                        console.log(`Found ${otherUnit.type}`);
                         nearestAlly = {
                             x: otherUnit.x,
                             y: otherUnit.y
@@ -646,7 +650,32 @@ class Commander extends Unit {
                 }
 
                 if (nearestAlly) {
-                    this.move(nearestAlly.x, nearestAlly.y)
+                    this.isFleeing = true;
+                    this.move(nearestAlly.x, nearestAlly.y);
+                } else {
+                    this.isAggro = true;
+                }
+
+                
+            }
+
+            let target = this.findOptimalTarget();
+            if (target) {
+                const directionX = target.x - this.x;
+                const directionY = target.y - this.y;
+                const distance = Math.sqrt(directionX * directionX + directionY * directionY);
+                if (distance <= this.range/2 || this.isFleeing == true && distance <= this.range || this.isAgro && distance <= this.range) {
+                     if (this.currentAttackCooldown <= 0) {
+                        let projectile = new Projectile(this.team, this.x, this.y, 5, directionX, directionY, 2, this.attackPower)
+                        console.log(`Created ${projectile.teamCasted} Projectile`)
+                        this.currentAttackCooldown = this.attackCooldown; // Reset cooldown
+                    } else {
+                        this.currentAttackCooldown -= 1 / 60; // Decrease cooldown based on game speed
+                    }
+                } 
+
+                if (this.isAggro && distance > this.range) {
+                    this.move(target.x, target.y)
                 }
             }
         } else {
