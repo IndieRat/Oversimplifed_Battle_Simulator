@@ -568,6 +568,7 @@ class Archer extends Unit {
     constructor(team, x, y) {
         super(team, x, y, "ranged", "hit");
         this.type = 'Archer';
+        this.attackCooldown = this.attackCooldown/2.5
         this.range *= 5;
         this.health = 80;
     }
@@ -694,8 +695,8 @@ class Mage extends Unit {
         super(team, x, y, "ranged", "aoe");
         this.type = "Mage";
         this.range *= 5.5;
-        this.attackCooldown = this.attackCooldown/1.2
-        this.attackPower = this.currentAttackCooldown/2
+        this.attackCooldown = this.attackCooldown/3
+        this.attackPower = this.attackPower/2
         this.health = 90;
 
     }
