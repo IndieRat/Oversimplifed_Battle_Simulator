@@ -298,7 +298,7 @@ class Unit {
         this.range = 25; // default range for the unit
         this.radius = 10 
 
-        this.behavior = behavior || "";
+        this.behavior = behavior;
 
         this.projectileType = projectileType || "";
         currentUnits.push(this); // Add the new unit to the current units array
@@ -560,6 +560,10 @@ class Unit {
                 continue;
             }
 
+            if (otherUnit.behavior == "support" && otherUnit.type == this.type) {
+                continue;
+            }
+            
             const directionX = this.x - otherUnit.x;
             const directionY = this.y - otherUnit.y;
             const distance = Math.sqrt(directionX * directionX + directionY * directionY);
@@ -578,11 +582,6 @@ class Unit {
             let sumX = 0;
             let sumY = 0;
             for (let ally of alliesInRange) {
-                if (ally.behavior == "support") {
-                    continue;
-                }
-
-
                 sumX += ally.x;
                 sumY += ally.y;
             }
@@ -785,6 +784,7 @@ class Medic extends Unit {
         this.health = 80;
         this.maxHealth = 80;
         this.attackPower = 3;
+        this.originalAttackPower = this.attackPower;
         this.range *= 2.5;
 
         this.healingUnits = [];
