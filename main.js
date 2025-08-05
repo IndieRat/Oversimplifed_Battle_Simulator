@@ -306,7 +306,7 @@ class Unit {
         // adds team count
         if (this.team == "player") {
             unitTracker.player += 1
-            unitTracker
+            unitTracker.enemy += 1
         }
     }
 
@@ -852,7 +852,7 @@ class Medic extends Unit {
                 let largestDistance = Infinity;
                 let nearestAlly = {};
                 for (let otherUnit of currentUnits) {
-                    if (otherUnit == this || otherUnit.isDead || otherUnit.type == "support" || otherUnit.team !== this.team) {
+                    if (otherUnit == this || otherUnit.isDead || otherUnit.behavior == "support" || otherUnit.team !== this.team) {
                         continue;
                     }
                     const directionX = this.x - otherUnit.x;
