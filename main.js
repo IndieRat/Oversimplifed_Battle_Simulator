@@ -560,10 +560,6 @@ class Unit {
                 continue;
             }
 
-            if (this.type == "Medic" && otherUnit.type == "Medic") {
-                continue;
-            }
-
             const directionX = this.x - otherUnit.x;
             const directionY = this.y - otherUnit.y;
             const distance = Math.sqrt(directionX * directionX + directionY * directionY);
@@ -582,6 +578,11 @@ class Unit {
             let sumX = 0;
             let sumY = 0;
             for (let ally of alliesInRange) {
+                if (ally.behavior == "support") {
+                    continue;
+                }
+
+
                 sumX += ally.x;
                 sumY += ally.y;
             }
@@ -674,7 +675,7 @@ class Commander extends Unit {
                 let largestDistance = Infinity;
                 let nearestAlly = {};
                 for (let otherUnit of currentUnits) {
-                    if (otherUnit == this || otherUnit.type == "support"  || otherUnit.team !== this.team) {
+                    if (otherUnit == this || otherUnit.behavior == "support"  || otherUnit.team !== this.team) {
                         continue;
                     }
 
