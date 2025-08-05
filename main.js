@@ -783,7 +783,7 @@ class Medic extends Unit {
         this.type = "Medic";
         this.health = 80;
         this.maxHealth = 80;
-        this.attackPower = 5;
+        this.attackPower = 3;
         this.range *= 2.5;
 
         this.healingUnits = [];
