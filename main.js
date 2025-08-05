@@ -556,7 +556,11 @@ class Unit {
         let alliesInRange = [];
         let allies = [];
         for (let otherUnit of currentUnits) {
-            if (otherUnit == this || otherUnit.isDead || otherUnit.team !== this.team) {
+            if (otherUnit == this || otherUnit.isDead  || otherUnit.team !== this.team) {
+                continue;
+            }
+
+            if (this.type == "Medic" && otherUnit.type == "Medic") {
                 continue;
             }
 
