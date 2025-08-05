@@ -670,7 +670,7 @@ class Commander extends Unit {
                 let largestDistance = Infinity;
                 let nearestAlly = {};
                 for (let otherUnit of currentUnits) {
-                    if (otherUnit == this ||  otherUnit.isDead || otherUnit.behavior == "" || otherUnit.team !== this.team) {
+                    if (otherUnit == this || otherUnit.type == "support"  || otherUnit.team !== this.team) {
                         continue;
                     }
 
@@ -848,7 +848,7 @@ class Medic extends Unit {
                 let largestDistance = Infinity;
                 let nearestAlly = {};
                 for (let otherUnit of currentUnits) {
-                    if (otherUnit == this || otherUnit.isDead || otherUnit.behavior == "" || otherUnit.team !== this.team) {
+                    if (otherUnit == this || otherUnit.isDead || otherUnit.type == "support" || otherUnit.team !== this.team) {
                         continue;
                     }
                     const directionX = this.x - otherUnit.x;
