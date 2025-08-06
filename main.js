@@ -127,9 +127,9 @@ const unitType = document.getElementById('unitType');
 const fixedRows = 15; // number of rows in the grid
 const fixedCols = 10; // number of columns in the grid
 
-let unlockedUnits = ['Infantry', 'Archer', 'Commander', 'HeavyInfantry', 'Mage', 'Medic']; // list of unlocked units
+let unlockedUnits = ['Infantry', 'Archer', 'Commander', 'HeavyInfantry', 'Mage', 'Medic', 'Barrack']; // list of unlocked units
 let occupiedCells = []; // array to keep track of occupied cells in the grid
-let projectiles = [];
+let projectiles = []; // array to keep track of projectiles
 
 const teamColors = {
     player: 'lightgreen',
@@ -143,7 +143,8 @@ const unitColors = {
     Commander: 'lightcoral',
     HeavyInfantry: `grey`,
     Mage: `darkblue`,
-    Medic: `lightyellow`
+    Medic: `lightyellow`,
+    Barrack: `brown`
 };
 
 const maxAttempts = 12;
@@ -560,10 +561,10 @@ class Unit {
                 continue;
             }
 
-            if (otherUnit.behavior == "support" && otherUnit.type == this.type) {
+            if (this.behavior == "support" && otherUnit.behavior == "support") {
                 continue;
             }
-            
+
             const directionX = this.x - otherUnit.x;
             const directionY = this.y - otherUnit.y;
             const distance = Math.sqrt(directionX * directionX + directionY * directionY);
@@ -674,7 +675,7 @@ class Commander extends Unit {
                 let largestDistance = Infinity;
                 let nearestAlly = {};
                 for (let otherUnit of currentUnits) {
-                    if (otherUnit == this || otherUnit.behavior == "support"  || otherUnit.team !== this.team) {
+                    if (otherUnit == this || otherUnit.behavior == "support" || otherUnit.isDead || otherUnit.team !== this.team) {
                         continue;
                     }
 
@@ -737,6 +738,38 @@ class Commander extends Unit {
         let color = '';
         if (this.isDead) {
             color = 'gray'; // Color for dead units
+
+            ctx.save();
+            if (!this.explosionBits) {
+                // Generate explosion bits only once
+                this.explosionBits = [];
+                const bitCount = 12;
+                for (let i = 0; i < bitCount; i++) {
+                    const angle = (2 * Math.PI * i) / bitCount;
+                    const speed = randomInt(2, 5);
+                    this.explosionBits.push({
+                        x: this.x,
+                        y: this.y,
+                        dx: Math.cos(angle) * speed,
+                        dy: Math.sin(angle) * speed,
+                        radius: randomInt(2, 4),
+                        color: color,
+                        alpha: 1
+                    });
+                }
+            }
+            for (let bit of this.explosionBits) {
+                bit.x += bit.dx;
+                bit.y += bit.dy;
+                bit.alpha -= 0.03;
+                ctx.globalAlpha = Math.max(bit.alpha, 0);
+                drawCircle(bit.x, bit.y, bit.radius, bit.color);
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+            if (!this.finishedDeath) {
+                setTimeout(() => { this.finishedDeath = true; }, 350);
+            }
         } else {
             color = unitColors[this.type] || 'lightgray'; // Default color based on unit type
             
@@ -899,6 +932,38 @@ class Medic extends Unit {
         let color = '';
         if (this.isDead) {
             color = 'gray'; // Color for dead units
+
+            ctx.save();
+            if (!this.explosionBits) {
+                // Generate explosion bits only once
+                this.explosionBits = [];
+                const bitCount = 12;
+                for (let i = 0; i < bitCount; i++) {
+                    const angle = (2 * Math.PI * i) / bitCount;
+                    const speed = randomInt(2, 5);
+                    this.explosionBits.push({
+                        x: this.x,
+                        y: this.y,
+                        dx: Math.cos(angle) * speed,
+                        dy: Math.sin(angle) * speed,
+                        radius: randomInt(2, 4),
+                        color: color,
+                        alpha: 1
+                    });
+                }
+            }
+            for (let bit of this.explosionBits) {
+                bit.x += bit.dx;
+                bit.y += bit.dy;
+                bit.alpha -= 0.03;
+                ctx.globalAlpha = Math.max(bit.alpha, 0);
+                drawCircle(bit.x, bit.y, bit.radius, bit.color);
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+            if (!this.finishedDeath) {
+                setTimeout(() => { this.finishedDeath = true; }, 350);
+            }
         } else {
             color = unitColors[this.type] || 'lightgray'; // Default color based on unit type
             
@@ -913,6 +978,164 @@ class Medic extends Unit {
             ctx.restore();
         }
         
+    }
+}
+
+class Barrack extends Unit {
+    constructor(team, x, y) {
+        super(team, x, y, "support");
+        this.type = "Barrack";
+
+        this.health = 200;
+        this.maxHealth = 200;
+        this.attackPower = 0;
+        this.originalAttackPower = 0;
+        this.currentAttackCooldown = 10;
+        this.attackCooldown = 10; 
+
+        this.originalSpeed = 0;
+        this.speed = this.originalSpeed;
+        this.range = 0;
+
+        this.regenFrames = 100;
+    }
+
+    update() {
+        if (!this.isDead) {
+           if (this.health - 25 > 0) {
+                if (this.currentAttackCooldown <= 0) {
+                    this.spawnRandomUnitFromPool(["Infantry", "Archer"]);
+                    this.takeDamage(25);
+                
+                    this.currentAttackCooldown = this.attackPower;
+                } else {
+                    this.currentAttackCooldown -= 1 / 60; // Decrease cooldown based on game speed  
+                }
+           } else {
+                // begins regenerating to half hp
+                if (this.health < this.maxHealth/2) {
+                    this.health += 5 * (1 / this.regenFrames);
+                }
+           }
+        } else {
+            // If the unit is dead, it should not move or attack
+        }
+    }
+
+    draw() {
+        let color = '';
+        if (this.isDead) {
+            color = 'gray'; // Color for dead units
+
+            ctx.save();
+            if (!this.explosionBits) {
+                // Generate explosion bits only once
+                this.explosionBits = [];
+                const bitCount = 12;
+                for (let i = 0; i < bitCount; i++) {
+                    const angle = (2 * Math.PI * i) / bitCount;
+                    const speed = randomInt(2, 5);
+                    this.explosionBits.push({
+                        x: this.x,
+                        y: this.y,
+                        dx: Math.cos(angle) * speed,
+                        dy: Math.sin(angle) * speed,
+                        radius: randomInt(2, 4),
+                        color: color,
+                        alpha: 1
+                    });
+                }
+            }
+            for (let bit of this.explosionBits) {
+                bit.x += bit.dx;
+                bit.y += bit.dy;
+                bit.alpha -= 0.03;
+                ctx.globalAlpha = Math.max(bit.alpha, 0);
+                drawCircle(bit.x, bit.y, bit.radius, bit.color);
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+            if (!this.finishedDeath) {
+                setTimeout(() => { this.finishedDeath = true; }, 350);
+            }
+        } else {
+            color = unitColors[this.type] || 'lightgray'; // Default color based on unit type
+
+            // draws triangle centered on position
+            let x1 = this.x;
+            let y1 = this.y - this.radius;
+            let x2 = this.x - this.radius;
+            let y2 = this.y + this.radius;
+            let x3 = this.x + this.radius;
+            let y3 = this.y + this.radius;
+
+            drawTriangle(x1, y1, x2, y2, x3, y3, color);
+            this.drawHealth()
+        }
+    }
+
+    spawnRandomUnitFromPool(pool) {
+        if (pool.length > 0) {
+            let randomIndex = Math.floor(Math.random() * pool.length);
+            let randomUnit = pool[randomIndex];
+
+            let unit = undefined;
+            switch (randomUnit) {
+                case 'Infantry':
+                    unit = new Infantry(this.team, this.x, this.y);
+                    break;
+                case 'Archer':
+                    unit = new Archer(this.team, this.x, this.y);
+                    break;
+                case 'Commander':
+                    unit = new Commander(this.team, this.x, this.y);
+                    break;
+                case 'HeavyInfantry':
+                    unit = new HeavyInfantry(this.team, this.x, this.y);
+                    break;
+                case 'Mage':
+                    unit = new Mage(this.team, this.x, this.y);
+                    break;
+                case 'Medic':
+                    unit = new Medic(this.team, this.x, this.y);
+                    break;
+                default:
+                    unit = new Unit(this.team, this.x, this.y, "melee");
+                    break;
+
+            }
+            return unit;
+        }
+        return null;
+    }
+}
+
+function generateUnit(type, team, x, y) {
+    switch (type) {
+        case 'Infantry':
+            unit = new Infantry(team, x, y);
+            break;
+        case 'Archer':
+            unit = new Archer(team, x, y);
+            break;
+        case 'Commander':
+            unit = new Commander(team, x, y);
+            break;
+        case 'HeavyInfantry':
+            unit = new HeavyInfantry(team, x, y);
+            break;
+        case 'Mage':
+            unit = new Mage(team, x, y);
+             break;
+        case 'Medic':
+            unit = new Medic(team, x, y);
+            break;
+        case 'Barrack':
+            unit = new Barrack(team, x, y);
+            break;
+        default:
+            unit = new Unit(team, x, y, "melee");
+            break;
     }
 }
 
@@ -1101,30 +1324,7 @@ function handleCanvasClick(event) {
             if (event.buttons === 1) { // left click or hold
                 if (!occupiedCells.includes(`${gridX},${gridY}`)) {
                     if (currentUnitType && unlockedUnits.includes(currentUnitType)) {
-                        let unit = undefined;
-                        switch (currentUnitType) {
-                            case 'Infantry':
-                                unit = new Infantry(boundaryTeam, unitX, unitY);
-                                break;
-                            case 'Archer':
-                                unit = new Archer(boundaryTeam, unitX, unitY);
-                                break;
-                            case 'Commander':
-                                unit = new Commander(boundaryTeam, unitX, unitY);
-                                break;
-                            case 'HeavyInfantry':
-                                unit = new HeavyInfantry(boundaryTeam, unitX, unitY);
-                                break;
-                            case 'Mage':
-                                unit = new Mage(boundaryTeam, unitX, unitY);
-                                break;
-                            case 'Medic':
-                                unit = new Medic(boundaryTeam, unitX, unitY);
-                                break;
-                            default:
-                                unit = new Unit(boundaryTeam, unitX, unitY, "melee");
-                                break;
-                        }
+                        generateUnit(currentUnitType, boundaryTeam, unitX, unitY);
                         occupiedCells.push(`${gridX},${gridY}`);
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         createBattleGrid();
