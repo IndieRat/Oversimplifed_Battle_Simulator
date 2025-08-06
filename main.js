@@ -991,7 +991,7 @@ class Barrack extends Unit {
         this.attackPower = 0;
         this.originalAttackPower = 0;
         this.currentAttackCooldown = 10;
-        this.attackCooldown = 10; 
+        this.attackCooldown = 2; 
 
         this.originalSpeed = 0;
         this.speed = this.originalSpeed;
@@ -1104,9 +1104,7 @@ class Barrack extends Unit {
                     break;
 
             }
-            return unit;
         }
-        return null;
     }
 }
 
@@ -1465,6 +1463,9 @@ pauseButton.addEventListener('click', function() {
 
 resetButton.addEventListener('click', function() {
     if (gameStarted) {
+        pauseButton.textContent = "Pause";
+        gamePaused = false;
+
         gameRunning = false;
         gameStarted = false;
         startButton.textContent = "Start Battle";
